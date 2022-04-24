@@ -24,7 +24,7 @@ public class WishlogRecordFilter : IAsyncResultFilter
         var operation = record.Path?.Substring(record.Path.LastIndexOf('/') + 1).ToLower();
         if (context.Result is ObjectResult obj)
         {
-            if (obj.Value is WishlogBackupResult result)
+            if ((obj.Value as dynamic)?.Data is WishlogBackupResult result)
             {
                 record.Uid = result.Uid;
                 record.Operation = operation;

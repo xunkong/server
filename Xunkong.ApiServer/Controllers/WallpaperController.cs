@@ -27,7 +27,7 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 2592000)]
     public async Task<WallpaperInfo> GetWallpaperInfoByIdAsync([FromRoute] int id)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).FirstOrDefaultAsync();
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).SingleOrDefaultAsync();
         if (info is not null)
         {
             return info;
@@ -45,7 +45,7 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 2592000)]
     public async Task<IActionResult> RedirectToWallpaperImageByIdAsync([FromRoute] int id)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).FirstOrDefaultAsync();
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).SingleOrDefaultAsync();
         if (info is not null)
         {
             return RedirectToImage(info.FileName!);
@@ -122,10 +122,10 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 86400)]
     public async Task<WallpaperInfo> GetNextWallpaperInfoAsync([FromQuery] int lastId)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id > lastId).FirstOrDefaultAsync();
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id > lastId).FirstOrDefaultAsync();
         if (info == null)
         {
-            info = await _dbContext.WallpaperInfos.AsNoTracking().FirstOrDefaultAsync();
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).FirstOrDefaultAsync();
         }
         return info!;
     }
@@ -169,7 +169,7 @@ public class WallpaperController : Controller
             {
                 var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
                 var skip = Random.Shared.Next(count);
-                var info = await _dbContext.WallpaperInfos.AsNoTracking().Skip(skip).FirstOrDefaultAsync();
+                var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(skip).FirstOrDefaultAsync();
                 rows = await _dbContext.Database.ExecuteSqlRawAsync($"UPDATE wallpapers SET Recommend=1 WHERE Id = {info?.Id ?? 0};");
             }
             await t.CommitAsync();
@@ -207,7 +207,7 @@ public class WallpaperController : Controller
             {
                 var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
                 var skip = Random.Shared.Next(count);
-                var info = await _dbContext.WallpaperInfos.AsNoTracking().Skip(skip).FirstOrDefaultAsync();
+                var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(skip).FirstOrDefaultAsync();
                 rows = await _dbContext.Database.ExecuteSqlRawAsync($"UPDATE wallpapers SET Recommend=1 WHERE Id = {info?.Id ?? 0};");
             }
             await t.CommitAsync();
