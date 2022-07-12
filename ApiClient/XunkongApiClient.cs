@@ -1,5 +1,5 @@
 ﻿using System.Net.Http.Json;
-using System.Text.Json;
+using Xunkong.ApiClient.Xunkong;
 using Xunkong.GenshinData.Character;
 using Xunkong.GenshinData.Weapon;
 using Xunkong.Hoyolab.Wishlog;
@@ -11,22 +11,18 @@ public class XunkongApiClient
 
     private readonly HttpClient _httpClient;
 
-#if !NativeAOT
-    private readonly JsonSerializerOptions _jsonOptions;
-#endif
-
     private const string BaseUrl = "https://api.xunkong.cc";
 
     public const string ApiVersion = "v0.1";
 
-#if NativeAOT
+
 
     public XunkongApiClient(HttpClient? httpClient = null)
     {
         if (httpClient is null)
         {
             _httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "XunkongApiClient/0.1.0");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "XunkongApiClient/1.0.0");
         }
         else
         {
@@ -34,41 +30,13 @@ public class XunkongApiClient
         }
     }
 
-#else
-
-    public XunkongApiClient(HttpClient? httpClient = null, JsonSerializerOptions? jsonOptions = null)
-    {
-        if (httpClient is null)
-        {
-            _httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "XunkongApiClient/0.1.0");
-        }
-        else
-        {
-            _httpClient = httpClient;
-        }
-        if (jsonOptions is null)
-        {
-            _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        }
-        else
-        {
-            _jsonOptions = jsonOptions;
-        }
-    }
-
-#endif
 
     #region Common Method
 
 
     private async Task<T> CommonGetAsync<T>(string url) where T : class
     {
-#if NativeAOT
-        var wrapper = await _httpClient.GetFromJsonAsync(url, typeof(ApiBaseWrapper<T>), XunkongApiJsonContext.Default) as ApiBaseWrapper<T>;
-#else
-        var wrapper = await _httpClient.GetFromJsonAsync<ApiBaseWrapper<T>>(url, _jsonOptions);
-#endif
+        var wrapper = await _httpClient.GetFromJsonAsync<ApiBaseWrapper<T>>(url);
         if (wrapper is null)
         {
             throw new XunkongApiException(-2, "Response body is null.");
@@ -90,11 +58,7 @@ public class XunkongApiClient
     {
         var response = await _httpClient.PostAsJsonAsync(url, value);
         response.EnsureSuccessStatusCode();
-#if NativeAOT
-        var wrapper = await JsonSerializer.DeserializeAsync(await response.Content.ReadAsStreamAsync(), typeof(ApiBaseWrapper<T>), XunkongApiJsonContext.Default) as ApiBaseWrapper<T>;
-#else
-        var wrapper = await JsonSerializer.DeserializeAsync<ApiBaseWrapper<T>>(await response.Content.ReadAsStreamAsync(), _jsonOptions);
-#endif
+        var wrapper = await response.Content.ReadFromJsonAsync<ApiBaseWrapper<T>>();
         if (wrapper is null)
         {
             throw new XunkongApiException(-2, "Response body is null.");
@@ -116,11 +80,7 @@ public class XunkongApiClient
     {
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
-#if NativeAOT
-        var wrapper = await JsonSerializer.DeserializeAsync(await response.Content.ReadAsStreamAsync(), typeof(ApiBaseWrapper<T>), XunkongApiJsonContext.Default) as ApiBaseWrapper<T>;
-#else
-        var wrapper = await JsonSerializer.DeserializeAsync<ApiBaseWrapper<T>>(await response.Content.ReadAsStreamAsync(), _jsonOptions);
-#endif
+        var wrapper = await response.Content.ReadFromJsonAsync<ApiBaseWrapper<T>>();
         if (wrapper is null)
         {
             throw new XunkongApiException(-2, "Response body is null.");
@@ -145,30 +105,14 @@ public class XunkongApiClient
 
 
 
-    public async Task<DesktopUpdateVersion> CheckDesktopUpdateAsync(ChannelType channel)
+    public async Task<List<InfoBarContent>> GetInfoBarContentListAsync()
     {
-        var url = $"{BaseUrl}/{ApiVersion}/desktop/checkupdate?channel={channel}";
-        return await CommonGetAsync<DesktopUpdateVersion>(url);
+        var url = $"{BaseUrl}/{ApiVersion}/desktop/infobar";
+        var wrapper = await CommonGetAsync<ListWrapper<InfoBarContent>>(url);
+        return wrapper.List;
     }
 
 
-#if NativeAOT
-
-    public async Task<NotificationWrapper<NotificationModelBase>> GetNotificationsAsync(ChannelType channel, Version version, int lastId = 0)
-    {
-        var url = $"{BaseUrl}/{ApiVersion}/desktop/notifications?channel={channel}&version={version}&lastId={lastId}";
-        return await CommonGetAsync<NotificationWrapper<NotificationModelBase>>(url);
-    }
-
-#else
-
-    public async Task<NotificationWrapper<T>> GetNotificationsAsync<T>(ChannelType channel, Version version, int lastId = 0) where T : NotificationModelBase
-    {
-        var url = $"{BaseUrl}/{ApiVersion}/desktop/notifications?channel={channel}&version={version}&lastId={lastId}";
-        return await CommonGetAsync<NotificationWrapper<T>>(url);
-    }
-
-#endif
 
     #endregion
 
@@ -244,6 +188,12 @@ public class XunkongApiClient
     #region Genshin Wallpaper
 
 
+    public async Task<WallpaperInfo> GetWallpaperByIdAsync(int id)
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/{id}";
+        return await CommonGetAsync<WallpaperInfo>(url);
+    }
+
     public async Task<WallpaperInfo> GetRecommendWallpaperAsync()
     {
         var url = $"{BaseUrl}/{ApiVersion}/wallpaper/recommend";
@@ -251,9 +201,9 @@ public class XunkongApiClient
     }
 
 
-    public async Task<WallpaperInfo> GetRandomWallpaperAsync()
+    public async Task<WallpaperInfo> GetRandomWallpaperAsync(int maxage = 0)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/random";
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/random?max-age={maxage}";
         return await CommonGetAsync<WallpaperInfo>(url);
     }
 
@@ -263,6 +213,16 @@ public class XunkongApiClient
         var url = $"{BaseUrl}/{ApiVersion}/wallpaper/next?lastId={lastId}";
         return await CommonGetAsync<WallpaperInfo>(url);
     }
+
+
+
+    public async Task<List<WallpaperInfo>> GetWallpaperListAsync(int page, int size)
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/list?page={page}&size={size}";
+        var wrapper = await CommonGetAsync<WallpaperInfoListWrapper>(url);
+        return wrapper.List;
+    }
+
 
 
 

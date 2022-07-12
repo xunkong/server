@@ -1,6 +1,6 @@
 ﻿namespace Xunkong.ApiClient;
 
-public class XunkongApiException : Exception
+public class XunkongApiException : XunkongException
 {
 
     public int Code { get; init; }

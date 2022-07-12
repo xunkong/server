@@ -12,12 +12,13 @@
 		<RepositoryUrl>https://github.com/xunkong/server</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>xunkong genshin</PackageTags>
+		<RuntimeIdentifiers>win-x86;win-x64;win-arm64;linux-x64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Xunkong.Core" Version="0.1.0" />
-	  <PackageReference Include="Xunkong.GenshinData" Version="0.1.0" />
-	  <PackageReference Include="Xunkong.Hoyolab" Version="0.1.2" />
+		<ProjectReference Include="..\..\Common\Xunkong.Core\Xunkong.Core.csproj" />
+		<ProjectReference Include="..\..\Common\Xunkong.GenshinData\Xunkong.GenshinData.csproj" />
+		<ProjectReference Include="..\..\Common\Xunkong.Hoyolab\Xunkong.Hoyolab.csproj" />
 	</ItemGroup>
 
 </Project>

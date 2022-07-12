@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32408.312
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xunkong.ApiClient", "Xunkong.ApiClient\Xunkong.ApiClient.csproj", "{EA3F0FB9-DD6C-4076-A898-00DA5748D43E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xunkong.ApiClient", "ApiClient\Xunkong.ApiClient.csproj", "{0972FA41-783A-45CA-9D49-EEDAC3C7EF16}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xunkong.ApiServer", "Xunkong.ApiServer\Xunkong.ApiServer.csproj", "{72C109B6-FBF4-4EAC-B831-9DEC111978A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xunkong.ApiServer", "ApiServer\Xunkong.ApiServer.csproj", "{A09BF92A-AE5E-47F7-8D90-A710ED61DA58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EA3F0FB9-DD6C-4076-A898-00DA5748D43E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EA3F0FB9-DD6C-4076-A898-00DA5748D43E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EA3F0FB9-DD6C-4076-A898-00DA5748D43E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EA3F0FB9-DD6C-4076-A898-00DA5748D43E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{72C109B6-FBF4-4EAC-B831-9DEC111978A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{72C109B6-FBF4-4EAC-B831-9DEC111978A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{72C109B6-FBF4-4EAC-B831-9DEC111978A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{72C109B6-FBF4-4EAC-B831-9DEC111978A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0972FA41-783A-45CA-9D49-EEDAC3C7EF16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0972FA41-783A-45CA-9D49-EEDAC3C7EF16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0972FA41-783A-45CA-9D49-EEDAC3C7EF16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0972FA41-783A-45CA-9D49-EEDAC3C7EF16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A09BF92A-AE5E-47F7-8D90-A710ED61DA58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A09BF92A-AE5E-47F7-8D90-A710ED61DA58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A09BF92A-AE5E-47F7-8D90-A710ED61DA58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A09BF92A-AE5E-47F7-8D90-A710ED61DA58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

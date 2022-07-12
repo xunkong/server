@@ -3,7 +3,6 @@
 using Xunkong.GenshinData.Text;
 using Xunkong.Hoyolab.DailyNote;
 using Xunkong.Hoyolab.SpiralAbyss;
-using Xunkong.Hoyolab.TravelNotes;
 
 namespace Xunkong.ApiServer.Services;
 
@@ -35,9 +34,9 @@ public class XunkongDbContext : DbContext
 
     public DbSet<WishEventInfo> WishEventInfos { get; set; }
 
-    public DbSet<TravelNotesMonthData> TravelRecordMonthDatas { get; set; }
+    //public DbSet<TravelNotesMonthData> TravelRecordMonthDatas { get; set; }
 
-    public DbSet<TravelNotesAwardItem> TravelRecordAwardItems { get; set; }
+    //public DbSet<TravelNotesAwardItem> TravelRecordAwardItems { get; set; }
 
     public DbSet<SpiralAbyssInfo> SpiralAbyssInfos { get; set; }
 
@@ -69,7 +68,7 @@ public class XunkongDbContext : DbContext
         {
             e.ToTable("wishlog_items");
             e.HasKey(x => new { x.Uid, x.Id });
-            e.Ignore(x => x.Count).Ignore(x => x.ItemId).Ignore(x=>x._TimeString);
+            e.Ignore(x => x.Count).Ignore(x => x.ItemId).Ignore(x => x._TimeString);
         });
         modelBuilder.Entity<WishlogAuthkeyItem>().ToTable("wishlog_authkeys");
 
