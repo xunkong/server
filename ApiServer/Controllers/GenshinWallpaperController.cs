@@ -1,6 +1,4 @@
-﻿using System.Web;
-
-namespace Xunkong.ApiServer.Controllers;
+﻿namespace Xunkong.ApiServer.Controllers;
 
 [ApiController]
 [ApiVersion("0.1")]
@@ -26,22 +24,13 @@ public class GenshinWallpaperController : Controller
     [ResponseCache(NoStore = true)]
     public async Task<WallpaperInfo> GetRandomWallpaperAsJsonResultAsync(int excludeId = 0)
     {
-        WallpaperInfo? info = null;
-        if (excludeId == 0)
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        if (info is null)
         {
-            var count = await _dbContext.WallpaperInfos.Where(x => x.Recommend).CountAsync();
-            var index = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.Where(x => x.Recommend).Skip(index).FirstOrDefaultAsync();
-        }
-        if (info == null)
-        {
-            var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-            var index = Random.Shared.Next(count - 1);
-            info = await _dbContext.WallpaperInfos.Where(x => x.Enable && x.Id != excludeId).Skip(index).FirstOrDefaultAsync();
-        }
-        if (info == null)
-        {
-            info = await _dbContext.WallpaperInfos.Where(x => x.Enable).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
         }
         return info!;
     }
@@ -67,17 +56,15 @@ public class GenshinWallpaperController : Controller
     [ResponseCache(Duration = 3600)]
     public async Task<IActionResult> RedirectRecommendWallpaperAsync()
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Recommend).CountAsync();
-        var index = Random.Shared.Next(count);
-        var info = await _dbContext.WallpaperInfos.Where(x => x.Recommend).Skip(index).FirstOrDefaultAsync();
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
         if (info is null)
         {
-            count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-            index = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(index).FirstOrDefaultAsync();
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
         }
-        var url = $"https://file.xunkong.cc/wallpaper/{HttpUtility.UrlEncode(info!.FileName)}";
-        return Redirect(url);
+        return Redirect(info!.Url);
     }
 
 
@@ -88,11 +75,15 @@ public class GenshinWallpaperController : Controller
     [ResponseCache(NoStore = true)]
     public async Task<IActionResult> RedirectRandomWallpaperAsync()
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-        var index = Random.Shared.Next(count);
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(index).FirstOrDefaultAsync();
-        var url = $"https://file.xunkong.cc/wallpaper/{HttpUtility.UrlEncode(info!.FileName)}";
-        return Redirect(url);
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        if (info is null)
+        {
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        }
+        return Redirect(info!.Url);
     }
 
 

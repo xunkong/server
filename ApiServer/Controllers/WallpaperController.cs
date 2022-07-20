@@ -45,10 +45,10 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 2592000)]
     public async Task<IActionResult> RedirectToWallpaperImageByIdAsync([FromRoute] int id)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).SingleOrDefaultAsync();
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).SingleOrDefaultAsync();
         if (info is not null)
         {
-            return RedirectToImage(info.FileName!);
+            return Redirect(info.Url);
         }
         else
         {
@@ -62,14 +62,13 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 3600)]
     public async Task<WallpaperInfo> GetRecommendWallpaperInfoAsync()
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Recommend).CountAsync();
-        var skip = Random.Shared.Next(count);
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Recommend).Skip(skip).FirstOrDefaultAsync();
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).FirstOrDefaultAsync();
         if (info is null)
         {
-            count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-            skip = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(skip).FirstOrDefaultAsync();
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).FirstOrDefaultAsync();
         }
         return info!;
     }
@@ -84,16 +83,15 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 3600)]
     public async Task<IActionResult> RedirectToRecommendWallpaperImageAsync()
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Recommend).CountAsync();
-        var skip = Random.Shared.Next(count);
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Recommend).Skip(skip).FirstOrDefaultAsync();
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
         if (info is null)
         {
-            count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-            skip = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(skip).FirstOrDefaultAsync();
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
         }
-        return RedirectToImage(info!.FileName!);
+        return Redirect(info!.Url);
     }
 
 
@@ -101,11 +99,16 @@ public class WallpaperController : Controller
     [HttpGet("random")]
     public async Task<WallpaperInfo> GetRandomWallpaperInfoAsync([FromQuery(Name = "max-age")] int maxage)
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-        var skip = Random.Shared.Next(count);
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(skip).FirstOrDefaultAsync();
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        if (info is null)
+        {
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        }
         maxage = Math.Clamp(maxage, 5, 3600 * 24);
-        Response.Headers["Cache-Control"] = $"max-age={maxage}";
+        Response.Headers["Cache-Control"] = $"public,max-age={maxage}";
         return info!;
     }
 
@@ -118,12 +121,17 @@ public class WallpaperController : Controller
     [HttpGet("random/redirect")]
     public async Task<IActionResult> RedirectToRandomWallpaperImageAsync([FromQuery(Name = "max-age")] int maxage)
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-        var skip = Random.Shared.Next(count);
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(skip).FirstOrDefaultAsync();
+        var count = await _dbContext.WallpaperInfos.CountAsync();
+        var id = Random.Shared.Next(count) + 1;
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        if (info is null)
+        {
+            id = Random.Shared.Next(count);
+            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
+        }
         maxage = Math.Clamp(maxage, 5, 3600 * 24);
-        Response.Headers["Cache-Control"] = $"max-age={maxage}";
-        return RedirectToImage(info!.FileName!);
+        Response.Headers["Cache-Control"] = $"public,max-age={maxage}";
+        return Redirect(info!.Url);
     }
 
 
@@ -132,7 +140,7 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 86400)]
     public async Task<WallpaperInfo> GetNextWallpaperInfoAsync([FromQuery] int lastId)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id > lastId).FirstOrDefaultAsync();
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Where(x => x.Id > lastId).FirstOrDefaultAsync();
         if (info == null)
         {
             info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).FirstOrDefaultAsync();
@@ -153,14 +161,6 @@ public class WallpaperController : Controller
         return new WallpaperInfoListWrapper(page, totalPage, infos.Count, infos);
     }
 
-
-
-
-    private IActionResult RedirectToImage(string fileName, string? style = null)
-    {
-        var url = $"https://file.xunkong.cc/wallpaper/{Uri.EscapeDataString(fileName)}{style}";
-        return Redirect(url);
-    }
 
 
 }

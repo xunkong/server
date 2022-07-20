@@ -16,7 +16,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Common\Xunkong.Core\Xunkong.Core.csproj" />
 		<ProjectReference Include="..\..\Common\Xunkong.GenshinData\Xunkong.GenshinData.csproj" />
 		<ProjectReference Include="..\..\Common\Xunkong.Hoyolab\Xunkong.Hoyolab.csproj" />
 	</ItemGroup>

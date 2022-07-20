@@ -73,6 +73,7 @@ public class DesktopController : Controller
 
     [NoWrapper]
     [HttpGet("TitleBarText")]
+    [ResponseCache(Duration = 900)]
     public string GetTitleBarText()
     {
         return "";
@@ -81,10 +82,18 @@ public class DesktopController : Controller
 
     [HttpGet("InfoBar")]
     [ResponseCache(Duration = 900)]
-    public async Task<object> GetHomePageInfoBarsAsync()
+    public async Task<object> GetHomePageInfoBarsAsync([FromQuery(Name = "channel")] ChannelType? channel, [FromQuery(Name = "version")] Version? version)
     {
+        if (channel == null)
+        {
+            channel = ChannelType.Sideload;
+        }
+        if (version == null)
+        {
+            version = new Version("1.0.0.0");
+        }
         using var dapper = _factory.CreateDbConnection();
-        var list = await dapper.QueryAsync<InfoBarContent>("SELECT * FROM InfoBarContent;");
+        var list = await dapper.QueryAsync<InfoBarContent>("SELECT * FROM InfoBarContent WHERE Channel=@Channel AND Version=@Version ORDER BY `Order`;", new { Channel = (int)channel, Version = version.ToString(3) });
         return new { List = list };
     }
 

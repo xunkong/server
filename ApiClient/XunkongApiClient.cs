@@ -105,9 +105,9 @@ public class XunkongApiClient
 
 
 
-    public async Task<List<InfoBarContent>> GetInfoBarContentListAsync()
+    public async Task<List<InfoBarContent>> GetInfoBarContentListAsync(ChannelType channel, Version version)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/desktop/infobar";
+        var url = $"{BaseUrl}/{ApiVersion}/desktop/infobar?channel={channel}&version={version}";
         var wrapper = await CommonGetAsync<ListWrapper<InfoBarContent>>(url);
         return wrapper.List;
     }
