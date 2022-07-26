@@ -25,6 +25,16 @@ public class GenshinDataController : ControllerBase
     }
 
 
+    [HttpGet("all")]
+    public async Task<object> GetAllGenshinDataAsync()
+    {
+        var characters = await _dbContext.CharacterInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Talents).Include(x => x.Constellations).ToListAsync();
+        var weapons = await _dbContext.WeaponInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Skills).ToListAsync();
+        var events = await _dbContext.WishEventInfos.AsNoTracking().ToListAsync();
+        return new { Characters = characters.Adapt<List<CharacterInfo>>(), Weapons = weapons.Adapt<List<WeaponInfo>>(), WishEvents = events };
+    }
+
+
 
     [HttpGet("character")]
     public async Task<object> GetCharacterInfos()
@@ -39,7 +49,6 @@ public class GenshinDataController : ControllerBase
     public async Task<object> GetWeaponInfos()
     {
         var weapons = await _dbContext.WeaponInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Skills).ToListAsync();
-
         var list = weapons.Adapt<List<WeaponInfo>>();
         return new { list.Count, List = list };
     }

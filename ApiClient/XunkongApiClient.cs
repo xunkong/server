@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using Xunkong.ApiClient.GenshinData;
 using Xunkong.ApiClient.Xunkong;
 using Xunkong.GenshinData.Character;
 using Xunkong.GenshinData.Weapon;
@@ -155,6 +156,13 @@ public class XunkongApiClient
 
     #region Genshin Data
 
+
+
+    public async Task<AllGenshinData> GetAllGenshinDataAsync()
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/genshindata/all";
+        return await CommonGetAsync<AllGenshinData>(url);
+    }
 
 
     public async Task<IEnumerable<CharacterInfo>> GetCharacterInfosAsync()
