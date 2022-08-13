@@ -1,4 +1,6 @@
-﻿namespace Xunkong.ApiServer.Controllers;
+﻿using System.Collections.Concurrent;
+
+namespace Xunkong.ApiServer.Controllers;
 
 [ApiController]
 [ApiVersion("0.1")]
@@ -62,15 +64,7 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 3600)]
     public async Task<WallpaperInfo> GetRecommendWallpaperInfoAsync()
     {
-        var count = await _dbContext.WallpaperInfos.CountAsync();
-        var id = Random.Shared.Next(count) + 1;
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).FirstOrDefaultAsync();
-        if (info is null)
-        {
-            id = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Id == id).FirstOrDefaultAsync();
-        }
-        return info!;
+        return await RandomNextAsync();
     }
 
 
@@ -83,15 +77,8 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 3600)]
     public async Task<IActionResult> RedirectToRecommendWallpaperImageAsync()
     {
-        var count = await _dbContext.WallpaperInfos.CountAsync();
-        var id = Random.Shared.Next(count) + 1;
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
-        if (info is null)
-        {
-            id = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
-        }
-        return Redirect(info!.Url);
+        var info = await RandomNextAsync();
+        return Redirect(info.Url);
     }
 
 
@@ -99,17 +86,14 @@ public class WallpaperController : Controller
     [HttpGet("random")]
     public async Task<WallpaperInfo> GetRandomWallpaperInfoAsync([FromQuery(Name = "max-age")] int maxage)
     {
-        var count = await _dbContext.WallpaperInfos.CountAsync();
-        var id = Random.Shared.Next(count) + 1;
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
-        if (info is null)
-        {
-            id = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
-        }
+        var info = await RandomNextAsync();
         maxage = Math.Clamp(maxage, 5, 3600 * 24);
         Response.Headers["Cache-Control"] = $"public,max-age={maxage}";
-        return info!;
+        if (info is null)
+        {
+            throw new FileNotFoundException();
+        }
+        return info;
     }
 
 
@@ -121,17 +105,10 @@ public class WallpaperController : Controller
     [HttpGet("random/redirect")]
     public async Task<IActionResult> RedirectToRandomWallpaperImageAsync([FromQuery(Name = "max-age")] int maxage)
     {
-        var count = await _dbContext.WallpaperInfos.CountAsync();
-        var id = Random.Shared.Next(count) + 1;
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
-        if (info is null)
-        {
-            id = Random.Shared.Next(count);
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable && x.Id == id).FirstOrDefaultAsync();
-        }
+        var info = await RandomNextAsync();
         maxage = Math.Clamp(maxage, 5, 3600 * 24);
         Response.Headers["Cache-Control"] = $"public,max-age={maxage}";
-        return Redirect(info!.Url);
+        return Redirect(info.Url);
     }
 
 
@@ -151,14 +128,46 @@ public class WallpaperController : Controller
 
 
     [HttpGet("list")]
-    [ResponseCache(Duration = 86400)]
-    public async Task<WallpaperInfoListWrapper> GetWallpaperInfosAsync([FromQuery] int page = 1, [FromQuery] int size = 20)
+    [ResponseCache(Duration = 5)]
+    public async Task<object> GetWallpaperInfosAsync([FromQuery] int size = 20)
     {
-        var count = await _dbContext.WallpaperInfos.Where(x => x.Enable).CountAsync();
-        var totalPage = count / size + 1;
-        page = Math.Clamp(page, 1, totalPage);
-        var infos = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Skip(size * page - size).Take(size).ToListAsync();
-        return new WallpaperInfoListWrapper(page, totalPage, infos.Count, infos);
+        size = Math.Clamp(size, 10, 40);
+        var list = new List<WallpaperInfo>(size);
+        for (int i = 0; i < size; i++)
+        {
+            list.Add(await RandomNextAsync());
+        }
+        return new { Count = size, List = list };
+    }
+
+
+
+    private static ConcurrentQueue<WallpaperInfo> _randomQueue = new();
+
+    private async ValueTask<WallpaperInfo> RandomNextAsync()
+    {
+        if (_randomQueue.IsEmpty)
+        {
+            var infos = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).ToArrayAsync();
+            // Fisher–Yates shuffle
+            for (int i = infos.Length - 1; i > 0; i--)
+            {
+                int j = Random.Shared.Next(i + 1);
+                (infos[i], infos[j]) = (infos[j], infos[i]);
+            }
+            foreach (var item in infos)
+            {
+                _randomQueue.Enqueue(item);
+            }
+        }
+        if (_randomQueue.TryDequeue(out var info))
+        {
+            return info;
+        }
+        else
+        {
+            return null!;
+        }
     }
 
 

@@ -12,4 +12,6 @@ public class AllGenshinData
     public List<WeaponInfo> Weapons { get; set; }
 
     public List<WishEventInfo> WishEvents { get; set; }
+
+    public Achievement Achievement { get; set; }
 }

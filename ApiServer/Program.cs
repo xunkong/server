@@ -1,7 +1,7 @@
 ﻿using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpLogging;
-using Serilog;
+using Microsoft.Extensions.Logging.Console;
 using Xunkong.ApiServer.Controllers;
 
 // net6限定：避免因为启用剪裁，在efcore的使用中出现「找不到System.DateOnly相关方法」的异常
@@ -68,7 +68,11 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReadCommentHandling = System.Text.Json.JsonCommentHandling.Skip;
 });
 
-//builder.Services.AddLogging(builder => builder.AddSimpleConsole(c => { c.ColorBehavior = LoggerColorBehavior.Enabled; c.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff zzz\n"; }));
+#if DEBUG
+builder.Services.AddLogging(builder => builder.AddSimpleConsole(c => { c.ColorBehavior = LoggerColorBehavior.Enabled; c.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff zzz\n"; }));
+#else
+builder.Host.UseSerilog((ctx, config) => config.ReadFrom.Configuration(ctx.Configuration));
+#endif
 
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
@@ -78,11 +82,12 @@ builder.Services.AddHttpLogging(options => options.LoggingFields = HttpLoggingFi
 
 builder.Services.AddHttpClient<WishlogClient>().ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
 
-builder.Host.UseSerilog((ctx, config) => config.ReadFrom.Configuration(ctx.Configuration));
 
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
 
+#if !DEBUG
 builder.Services.AddInMemoryRateLimiting();
+#endif
 
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
@@ -101,7 +106,9 @@ app.UseExceptionHandler(c => c.Run(async context =>
 }));
 
 // 请求速率限制
+#if !DEBUG
 app.UseIpRateLimiting();
+#endif
 
 // 阻止http请求
 app.Use(async (context, next) =>

@@ -2,6 +2,7 @@
 using Xunkong.ApiClient.GenshinData;
 using Xunkong.ApiClient.Xunkong;
 using Xunkong.GenshinData.Character;
+using Xunkong.GenshinData.Material;
 using Xunkong.GenshinData.Weapon;
 using Xunkong.Hoyolab.Wishlog;
 
@@ -189,6 +190,22 @@ public class XunkongApiClient
     }
 
 
+    public async Task<IEnumerable<NameCard>> GetNameCardsAsync()
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/genshindata/namecard";
+        var result = await CommonGetAsync<GenshinDataWrapper<NameCard>>(url);
+        return result.List;
+    }
+
+
+    public async Task<Achievement> GetAchievementsAsync()
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/genshindata/achievement";
+        return await CommonGetAsync<Achievement>(url);
+    }
+
+
+
     #endregion
 
 
@@ -224,10 +241,10 @@ public class XunkongApiClient
 
 
 
-    public async Task<List<WallpaperInfo>> GetWallpaperListAsync(int page, int size)
+    public async Task<List<WallpaperInfo>> GetWallpaperListAsync(int size)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/list?page={page}&size={size}";
-        var wrapper = await CommonGetAsync<WallpaperInfoListWrapper>(url);
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/list?size={size}";
+        var wrapper = await CommonGetAsync<ListWrapper<WallpaperInfo>>(url);
         return wrapper.List;
     }
 

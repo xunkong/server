@@ -1,5 +1,8 @@
 ﻿#pragma warning disable CS8602 // 解引用可能出现空引用。
 
+using System.Text.Json;
+using Xunkong.GenshinData.Achievement;
+using Xunkong.GenshinData.Material;
 using Xunkong.GenshinData.Text;
 using Xunkong.Hoyolab.DailyNote;
 using Xunkong.Hoyolab.SpiralAbyss;
@@ -50,6 +53,8 @@ public class XunkongDbContext : DbContext
 
 
 
+    private static JsonSerializerOptions JsonOptions = new();
+
     public XunkongDbContext(DbContextOptions<XunkongDbContext> options) : base(options)
     {
     }
@@ -98,6 +103,13 @@ public class XunkongDbContext : DbContext
         modelBuilder.Entity<WallpaperInfo>().Property(x => x.Tags).HasConversion(v => v.ToString(), s => s.Split(';', StringSplitOptions.None).ToList());
         modelBuilder.Entity<WallpaperInfo>().ToTable("wallpapers");
         modelBuilder.Entity<DailyNoteInfo>().Ignore(x => x.Expeditions).Ignore(x => x.Transformer);
+
+
+        modelBuilder.Entity<AchievementGoal>().ToTable("Info_Achievement_Goal");
+        modelBuilder.Entity<AchievementGoal>().Property(x => x.RewardNameCard).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<NameCard>(str, JsonOptions)); ;
+
+        modelBuilder.Entity<AchievementItem>().ToTable("Info_Achievement_Item");
+        modelBuilder.Entity<AchievementItem>().Property(x => x.TriggerConfig).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<TriggerConfig>(str, JsonOptions));
     }
 
 
