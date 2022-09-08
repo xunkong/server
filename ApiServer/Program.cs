@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Logging.Console;
+using Serilog;
 using Xunkong.ApiServer.Controllers;
 
 // net6限定：避免因为启用剪裁，在efcore的使用中出现「找不到System.DateOnly相关方法」的异常
@@ -18,10 +19,10 @@ builder.Services.AddControllers(options =>
 //builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v0.1", new()
+    c.SwaggerDoc("v1", new()
     {
         Title = "Xunkong Web Api",
-        Version = "v0.1",
+        Version = "v1",
     });
     c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Xunkong.ApiServer.xml"), true);
 });
@@ -48,7 +49,7 @@ builder.Services.AddScoped<WishlogRecordFilter>();
 builder.Services.AddDbContextPool<XunkongDbContext>(options =>
 {
 #if DEBUG
-    options.UseMySql(builder.Configuration.GetConnectionString("constr_xunkong"), new MySqlServerVersion("8.0.27"));
+    options.UseMySql(builder.Configuration.GetConnectionString("constr_xunkong"), new MySqlServerVersion("8.0.27")).EnableSensitiveDataLogging(true);
 #else
     options.UseMySql(Environment.GetEnvironmentVariable("CONSTR"), new MySqlServerVersion("8.0.25"));
 #endif
@@ -68,11 +69,11 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReadCommentHandling = System.Text.Json.JsonCommentHandling.Skip;
 });
 
-#if DEBUG
+//#if DEBUG
 builder.Services.AddLogging(builder => builder.AddSimpleConsole(c => { c.ColorBehavior = LoggerColorBehavior.Enabled; c.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff zzz\n"; }));
-#else
-builder.Host.UseSerilog((ctx, config) => config.ReadFrom.Configuration(ctx.Configuration));
-#endif
+//#else
+//builder.Host.UseSerilog((ctx, config) => config.ReadFrom.Configuration(ctx.Configuration));
+//#endif
 
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
@@ -134,7 +135,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v0.1/swagger.json", "Xunkong Web Api v0.1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Xunkong Web Api v1");
     });
 }
 

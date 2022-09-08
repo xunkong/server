@@ -6,7 +6,7 @@ namespace Xunkong.ApiServer.Controllers;
 /// 祈愿记录托管
 /// </summary>
 [ApiController]
-[ApiVersion("0.1")]
+[ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
 [ServiceFilter(typeof(WishlogRecordFilter))]
 [ServiceFilter(typeof(WishlogAuthActionFilter))]

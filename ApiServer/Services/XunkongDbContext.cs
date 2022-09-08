@@ -2,8 +2,10 @@
 
 using System.Text.Json;
 using Xunkong.GenshinData.Achievement;
+using Xunkong.GenshinData.Character;
 using Xunkong.GenshinData.Material;
 using Xunkong.GenshinData.Text;
+using Xunkong.GenshinData.Weapon;
 using Xunkong.Hoyolab.DailyNote;
 using Xunkong.Hoyolab.SpiralAbyss;
 
@@ -19,41 +21,19 @@ public class XunkongDbContext : DbContext
 
     public DbSet<WishlogRecordModel> WishlogRecords { get; set; }
 
-    public DbSet<TextMap> TextMaps { get; set; }
+    public DbSet<CharacterInfo> CharacterInfos { get; set; }
 
-    public DbSet<ReadableModel> Readables { get; set; }
-
-    public DbSet<ReadableTextMap> ReadableTextMaps { get; set; }
-
-    public DbSet<CharacterInfoModel> CharacterInfos { get; set; }
-
-    public DbSet<CharacterConstellationInfoModel> CharacterConstellationInfos { get; set; }
-
-    public DbSet<CharacterTalentInfoModel> CharacterTalentInfos { get; set; }
-
-    public DbSet<WeaponInfoModel> WeaponInfos { get; set; }
+    public DbSet<WeaponInfo> WeaponInfos { get; set; }
 
     public DbSet<WeaponSkillModel> WeaponSkills { get; set; }
 
     public DbSet<WishEventInfo> WishEventInfos { get; set; }
 
-    //public DbSet<TravelNotesMonthData> TravelRecordMonthDatas { get; set; }
-
-    //public DbSet<TravelNotesAwardItem> TravelRecordAwardItems { get; set; }
-
-    public DbSet<SpiralAbyssInfo> SpiralAbyssInfos { get; set; }
-
-    public DbSet<DailyNoteInfo> DailyNoteInfos { get; set; }
-
-    public DbSet<NotificationServerModel> NotificationItems { get; set; }
-
-    public DbSet<DesktopUpdateVersion> DesktopUpdateVersions { get; set; }
-
     public DbSet<WallpaperInfo> WallpaperInfos { get; set; }
 
 
 
-    private static JsonSerializerOptions JsonOptions = new();
+    private static JsonSerializerOptions JsonOptions = new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     public XunkongDbContext(DbContextOptions<XunkongDbContext> options) : base(options)
     {
@@ -87,29 +67,29 @@ public class XunkongDbContext : DbContext
             e.Property(x => x.Rank4UpItems).HasConversion(list => string.Join(",", list), s => s.Split(",", StringSplitOptions.None).ToList());
         });
 
-        modelBuilder.Entity<SpiralAbyssRank>(e =>
-        {
-            e.HasOne<SpiralAbyssInfo>().WithMany(x => x.RevealRank).HasForeignKey("SpiralAbyssInfo_RevealRank").OnDelete(DeleteBehavior.Cascade);
-            e.HasOne<SpiralAbyssInfo>().WithMany(x => x.DefeatRank).HasForeignKey("SpiralAbyssInfo_DefeatRank").OnDelete(DeleteBehavior.Cascade);
-            e.HasOne<SpiralAbyssInfo>().WithMany(x => x.DamageRank).HasForeignKey("SpiralAbyssInfo_DamageRank").OnDelete(DeleteBehavior.Cascade);
-            e.HasOne<SpiralAbyssInfo>().WithMany(x => x.TakeDamageRank).HasForeignKey("SpiralAbyssInfo_TakeDamageRank").OnDelete(DeleteBehavior.Cascade);
-            e.HasOne<SpiralAbyssInfo>().WithMany(x => x.NormalSkillRank).HasForeignKey("SpiralAbyssInfo_NormalSkillRank").OnDelete(DeleteBehavior.Cascade);
-            e.HasOne<SpiralAbyssInfo>().WithMany(x => x.EnergySkillRank).HasForeignKey("SpiralAbyssInfo_EnergySkillRank").OnDelete(DeleteBehavior.Cascade);
-        });
-        modelBuilder.Entity<NotificationServerModel>().Property(x => x.MinVersion).HasConversion(v => v.ToString(), s => new Version(s));
-        modelBuilder.Entity<NotificationServerModel>().Property(x => x.MaxVersion).HasConversion(v => v.ToString(), s => new Version(s));
-        modelBuilder.Entity<DesktopUpdateVersion>().ToTable("desktop_updateversions");
-        modelBuilder.Entity<DesktopUpdateVersion>().Property(x => x.Version).HasConversion(v => v.ToString(), s => new Version(s));
         modelBuilder.Entity<WallpaperInfo>().Property(x => x.Tags).HasConversion(v => v.ToString(), s => s.Split(';', StringSplitOptions.None).ToList());
         modelBuilder.Entity<WallpaperInfo>().ToTable("wallpapers");
-        modelBuilder.Entity<DailyNoteInfo>().Ignore(x => x.Expeditions).Ignore(x => x.Transformer);
-
 
         modelBuilder.Entity<AchievementGoal>().ToTable("Info_Achievement_Goal");
         modelBuilder.Entity<AchievementGoal>().Property(x => x.RewardNameCard).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<NameCard>(str, JsonOptions)); ;
 
         modelBuilder.Entity<AchievementItem>().ToTable("Info_Achievement_Item");
         modelBuilder.Entity<AchievementItem>().Property(x => x.TriggerConfig).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<TriggerConfig>(str, JsonOptions));
+
+        modelBuilder.Entity<CharacterInfo>().ToTable("info_character_v1");
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Talents).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<CharacterTalent>>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Constellations).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<CharacterConstellation>>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Promotions).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<CharacterPromotion>>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.NameCard).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<NameCard>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Food).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<Food>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Stories).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<CharacterStory>>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Voices).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<CharacterVoice>>(str, JsonOptions));
+        modelBuilder.Entity<CharacterInfo>().Property(x => x.Outfits).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<CharacterOutfit>>(str, JsonOptions));
+
+        modelBuilder.Entity<WeaponInfo>().ToTable("info_weapon_v1");
+        modelBuilder.Entity<WeaponInfo>().Property(x => x.Properties).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<WeaponProperty>>(str, JsonOptions));
+        modelBuilder.Entity<WeaponInfo>().Property(x => x.Skills).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<WeaponSkill>>(str, JsonOptions));
+        modelBuilder.Entity<WeaponInfo>().Property(x => x.Promotions).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<WeaponPromotion>>(str, JsonOptions));
     }
 
 

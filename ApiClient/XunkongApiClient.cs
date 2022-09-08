@@ -15,7 +15,7 @@ public class XunkongApiClient
 
     private const string BaseUrl = "https://api.xunkong.cc";
 
-    public const string ApiVersion = "v0.1";
+    public const string ApiVersion = "v1";
 
 
 
@@ -24,7 +24,7 @@ public class XunkongApiClient
         if (httpClient is null)
         {
             _httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "XunkongApiClient/1.0.0");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "XunkongApiClient/1.1.0");
         }
         else
         {
@@ -226,9 +226,9 @@ public class XunkongApiClient
     }
 
 
-    public async Task<WallpaperInfo> GetRandomWallpaperAsync(int maxage = 0)
+    public async Task<WallpaperInfo> GetRandomWallpaperAsync()
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/random?max-age={maxage}";
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/random";
         return await CommonGetAsync<WallpaperInfo>(url);
     }
 

@@ -7,22 +7,21 @@ using Xunkong.GenshinData.Weapon;
 namespace Xunkong.ApiServer.Controllers;
 
 [ApiController]
-[ApiVersion("0.1")]
+[ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
 [ServiceFilter(typeof(BaseRecordResultFilter))]
-#if !DEBUG
-[ResponseCache(Duration = 3600)]
-#endif
+[ResponseCache(Duration = 3600 * 24)]
+//[ResponseCache(NoStore = true)]
 public class GenshinDataController : ControllerBase
 {
-    private readonly ILogger<GenshinMetadataController> _logger;
+    private readonly ILogger<GenshinDataController> _logger;
 
     private readonly XunkongDbContext _dbContext;
 
     private readonly DbConnectionFactory _dbFactory;
 
 
-    public GenshinDataController(ILogger<GenshinMetadataController> logger, XunkongDbContext dbContext, DbConnectionFactory dbFactory)
+    public GenshinDataController(ILogger<GenshinDataController> logger, XunkongDbContext dbContext, DbConnectionFactory dbFactory)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -33,10 +32,10 @@ public class GenshinDataController : ControllerBase
     [HttpGet("all")]
     public async Task<object> GetAllGenshinDataAsync()
     {
-        var characters = await _dbContext.CharacterInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Talents).Include(x => x.Constellations).ToListAsync();
-        var weapons = await _dbContext.WeaponInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Skills).ToListAsync();
+        var characters = await _dbContext.CharacterInfos.FromSqlRaw("SELECT * FROM info_character_v1 WHERE Enable;").AsNoTracking().ToListAsync();
+        var weapons = await _dbContext.WeaponInfos.FromSqlRaw("SELECT * FROM info_weapon_v1 WHERE Enable;").AsNoTracking().ToListAsync();
         var events = await _dbContext.WishEventInfos.AsNoTracking().ToListAsync();
-        return new AllGenshinData { Characters = characters.Adapt<List<CharacterInfo>>(), Weapons = weapons.Adapt<List<WeaponInfo>>(), WishEvents = events, Achievement = await GetAchievementAsync() };
+        return new AllGenshinData { Characters = characters, Weapons = weapons, WishEvents = events, Achievement = await GetAchievementAsync() };
     }
 
 
@@ -44,7 +43,7 @@ public class GenshinDataController : ControllerBase
     [HttpGet("character")]
     public async Task<object> GetCharacterInfos()
     {
-        var characters = await _dbContext.CharacterInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Talents).Include(x => x.Constellations).ToListAsync();
+        var characters = await _dbContext.CharacterInfos.FromSqlRaw("SELECT * FROM info_character_v1 WHERE Enable;").AsNoTracking().ToListAsync();
         var list = characters.Adapt<List<CharacterInfo>>();
         return new { Count = list.Count, List = list };
     }
@@ -53,7 +52,7 @@ public class GenshinDataController : ControllerBase
     [HttpGet("weapon")]
     public async Task<object> GetWeaponInfos()
     {
-        var weapons = await _dbContext.WeaponInfos.AsNoTracking().Where(x => x.Enable).Include(x => x.Skills).ToListAsync();
+        var weapons = await _dbContext.WeaponInfos.FromSqlRaw("SELECT * FROM info_weapon_v1 WHERE Enable;").AsNoTracking().ToListAsync();
         var list = weapons.Adapt<List<WeaponInfo>>();
         return new { Count = list.Count, List = list };
     }
@@ -67,23 +66,12 @@ public class GenshinDataController : ControllerBase
     }
 
 
-    /// <summary>
-    /// 保持兼容性，返回空数组
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet("i18n")]
-    public object GetI18nModelsAsync()
-    {
-        return new { Language = "", Count = 0, List = new List<int>() };
-    }
-
-
 
     [HttpGet("namecard")]
     public async Task<object> GetNameCardsAsync()
     {
         using var dapper = _dbFactory.CreateDbConnection();
-        var list = await dapper.QueryAsync<NameCard>($"SELECT Id, Name, Description, Icon, ItemType, MaterialType, TypeDescription, RankLevel, StackLimit, `Rank`, GalleryBackground, ProfileImage FROM info_material WHERE Enable AND MaterialType='{MaterialType.NameCard}';");
+        var list = await dapper.QueryAsync<NameCard>($"SELECT * FROM info_material WHERE Enable AND MaterialType='{MaterialType.NameCard}';");
         return new { Count = list.Count(), List = list };
     }
 

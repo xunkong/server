@@ -3,20 +3,20 @@
 namespace Xunkong.ApiServer.Controllers;
 
 [ApiController]
-[ApiVersion("0.1")]
+[ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
 [ServiceFilter(typeof(BaseRecordResultFilter))]
 public class WallpaperController : Controller
 {
 
 
-    private readonly ILogger<GenshinWallpaperController> _logger;
+    private readonly ILogger<WallpaperController> _logger;
 
     private readonly XunkongDbContext _dbContext;
 
 
 
-    public WallpaperController(ILogger<GenshinWallpaperController> logger, XunkongDbContext dbContext)
+    public WallpaperController(ILogger<WallpaperController> logger, XunkongDbContext dbContext)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -84,16 +84,11 @@ public class WallpaperController : Controller
 
 
     [HttpGet("random")]
-    public async Task<WallpaperInfo> GetRandomWallpaperInfoAsync([FromQuery(Name = "max-age")] int maxage)
+    [ResponseCache(Duration = 5)]
+    public async Task<WallpaperInfo> GetRandomWallpaperInfoAsync()
     {
-        var info = await RandomNextAsync();
-        maxage = Math.Clamp(maxage, 5, 3600 * 24);
-        Response.Headers["Cache-Control"] = $"public,max-age={maxage}";
-        if (info is null)
-        {
-            throw new FileNotFoundException();
-        }
-        return info;
+        return await RandomNextAsync();
+
     }
 
 
@@ -103,11 +98,10 @@ public class WallpaperController : Controller
     /// <returns></returns>
     [NoWrapper]
     [HttpGet("random/redirect")]
-    public async Task<IActionResult> RedirectToRandomWallpaperImageAsync([FromQuery(Name = "max-age")] int maxage)
+    [ResponseCache(Duration = 5)]
+    public async Task<IActionResult> RedirectToRandomWallpaperImageAsync()
     {
         var info = await RandomNextAsync();
-        maxage = Math.Clamp(maxage, 5, 3600 * 24);
-        Response.Headers["Cache-Control"] = $"public,max-age={maxage}";
         return Redirect(info.Url);
     }
 

@@ -6,7 +6,7 @@ namespace Xunkong.ApiServer.Controllers;
 /// 返回值
 /// </summary>
 [ApiController]
-[ApiVersion("0.1")]
+[ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
 public class ReturnCodeController : ControllerBase
 {
