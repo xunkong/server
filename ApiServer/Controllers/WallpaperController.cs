@@ -87,8 +87,9 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 5)]
     public async Task<WallpaperInfo> GetRandomWallpaperInfoAsync()
     {
-        return await RandomNextAsync();
-
+        var info = await RandomNextAsync();
+        _logger.LogInformation("Wallpaper:\nId: {Id}\nTitle: {Title}\nUrl: {Url}", info.Id, info.Title, info.Url);
+        return info;
     }
 
 
@@ -142,17 +143,13 @@ public class WallpaperController : Controller
     {
         if (_randomQueue.IsEmpty)
         {
-            var infos = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).ToArrayAsync();
-            // Fisher–Yates shuffle
-            for (int i = infos.Length - 1; i > 0; i--)
-            {
-                int j = Random.Shared.Next(i + 1);
-                (infos[i], infos[j]) = (infos[j], infos[i]);
-            }
+            _logger.LogInformation("Wallpaper queue is empty, start get new randoms.");
+            var infos = await _dbContext.WallpaperInfos.FromSqlRaw("SELECT * FROM wallpapers WHERE Enable ORDER BY RAND() LIMIT 720;").AsNoTracking().ToArrayAsync();
             foreach (var item in infos)
             {
                 _randomQueue.Enqueue(item);
             }
+            _logger.LogInformation("Enqueue finished.");
         }
         if (_randomQueue.TryDequeue(out var info))
         {

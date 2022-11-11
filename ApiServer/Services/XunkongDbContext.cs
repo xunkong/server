@@ -71,7 +71,7 @@ public class XunkongDbContext : DbContext
         modelBuilder.Entity<WallpaperInfo>().ToTable("wallpapers");
 
         modelBuilder.Entity<AchievementGoal>().ToTable("Info_Achievement_Goal");
-        modelBuilder.Entity<AchievementGoal>().Property(x => x.RewardNameCard).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<NameCard>(str, JsonOptions)); ;
+        modelBuilder.Entity<AchievementGoal>().Property(x => x.RewardNameCard).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<NameCard>(str, JsonOptions));
 
         modelBuilder.Entity<AchievementItem>().ToTable("Info_Achievement_Item");
         modelBuilder.Entity<AchievementItem>().Property(x => x.TriggerConfig).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<TriggerConfig>(str, JsonOptions));

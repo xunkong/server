@@ -39,12 +39,14 @@ public class WishlogController : ControllerBase
         var currentCount = await _dbContext.WishlogItems.Where(x => x.Uid == uid).CountAsync();
         if (currentCount == 0)
         {
+            _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Get\nCount: 0", uid);
             return new WishlogBackupResult(uid, 0, 0, 0, 0);
         }
         var list = await _dbContext.WishlogItems.AsNoTracking()
                                                 .Where(x => x.Uid == uid && x.Id > wishlog.LastId)
                                                 .OrderBy(x => x.Id)
                                                 .ToListAsync();
+        _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Get\nCount: {Count}", uid, list.Count);
         return new WishlogBackupResult(uid, currentCount, list.Count, 0, 0, list);
     }
 
@@ -61,6 +63,7 @@ public class WishlogController : ControllerBase
         var list = wishlog.List?.Where(x => x.Uid == uid).ToList();
         if (list is null || !list.Any())
         {
+            _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Put\nError: Put item is 0", uid);
             throw new XunkongApiServerException(ErrorCode.NoWishlogItem);
         }
         var existing = await _dbContext.WishlogItems.Where(x => x.Uid == uid).Select(x => x.Id).ToListAsync();
@@ -76,6 +79,7 @@ public class WishlogController : ControllerBase
         _dbContext.AddRange(inserting);
         var putCount = await _dbContext.SaveChangesAsync();
         var currentCount = await _dbContext.WishlogItems.Where(x => x.Uid == uid).CountAsync();
+        _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Put\nPut: {Put}\nExisted: {Existed}\nInserting: {Inserting}\nTotal: {Total}", uid, list.Count, existing.Count, inserting.Count, currentCount);
         return new WishlogBackupResult(uid, currentCount, 0, putCount, 0, null);
     }
 
@@ -93,15 +97,17 @@ public class WishlogController : ControllerBase
         int deleteCount = 0;
         try
         {
+            _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Delete", uid);
             deleteCount = await _dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM wishlog_items WHERE Uid={uid};");
             await t.CommitAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Exception when deleting wishlog items where uid={uid} using transaction.", ex);
+            _logger.LogError(ex, "Wishlog:\nUid: {Uid}\nMethod: Delete\nError: {Error}", uid, ex.Message);
             await t.RollbackAsync();
             throw;
         }
+        _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Delete\nCount: {Count}", uid, deleteCount);
         return new WishlogBackupResult(uid, 0, 0, 0, deleteCount, null);
     }
 
@@ -119,9 +125,11 @@ public class WishlogController : ControllerBase
         var currentCount = await _dbContext.WishlogItems.Where(x => x.Uid == uid).CountAsync();
         if (currentCount == 0)
         {
+            _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Last\nCount: 0\nLastId: 0", uid);
             return new WishlogBackupResult(uid, 0, 0, 0, 0);
         }
         var item = await _dbContext.WishlogItems.AsNoTracking().Where(x => x.Uid == uid).OrderBy(x => x.Id).LastOrDefaultAsync();
+        _logger.LogInformation("Wishlog:\nUid: {Uid}\nMethod: Last\nCount: {Count}\nLastId: {LastId}", uid, currentCount, item.Id);
         return new WishlogBackupResult(uid, currentCount, 1, 0, 0, new List<WishlogItem> { item! });
     }
 

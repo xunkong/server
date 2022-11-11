@@ -24,6 +24,7 @@ public class ExceptionFilter : IAsyncExceptionFilter
         {
             record.ReturnCode = ex.Code;
             record.Message = ex.Message;
+            _logger.LogInformation(context.Exception, "XunkongApiServerException");
         }
         else
         {
