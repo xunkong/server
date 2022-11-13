@@ -37,7 +37,7 @@ public class DesktopController : Controller
         {
             version = new Version("1.0.0.0");
         }
-        var vs = $"{version.Major:D2}.{version.Minor:D2}.{version.Build:D2}";
+        var vs = $"{version.Major:D2}.{version.Minor:D2}.{version.Build:D2}.{version.Revision:D2}";
         using var dapper = _factory.CreateDbConnection();
         var list = await dapper.QueryAsync<InfoBarContent>("SELECT * FROM infobarcontent WHERE Enable AND Channel=@Channel AND MinVersion<=@Version AND @Version<MaxVersion ORDER BY `Order`;", new { Channel = (int)channel, Version = vs });
         return new { List = list };

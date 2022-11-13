@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
+using System.Xml;
 using Xunkong.Hoyolab;
 
 namespace Xunkong.ApiServer.Filters;
@@ -24,15 +25,13 @@ internal class WishlogAuthActionFilter : IAsyncActionFilter
     {
         if (context.ActionArguments["wishlog"] is WishlogBackupRequest wishlog)
         {
-            var uid = wishlog.Uid;
             if (string.IsNullOrWhiteSpace(wishlog.Url))
             {
                 throw new XunkongApiServerException(ErrorCode.UrlFormatError);
             }
             try
             {
-                var url_uid = await GetUidByUrlAsync(wishlog.Url);
-                if (url_uid != uid)
+                if (!await CheckUidAndUrlAsync(wishlog.Uid, wishlog.Url))
                 {
                     throw new XunkongApiServerException(ErrorCode.UrlNotMatchUid);
                 }
@@ -55,24 +54,24 @@ internal class WishlogAuthActionFilter : IAsyncActionFilter
 
 
 
-    private async Task<int> GetUidByUrlAsync(string url)
+    private async Task<bool> CheckUidAndUrlAsync(int uid, string url)
     {
-        var key = await _dbContext.WishlogAuthkeys.AsNoTracking().FirstOrDefaultAsync(x => x.Url == url);
+        var key = await _dbContext.WishlogAuthkeys.AsNoTracking().FirstOrDefaultAsync(x => x.Uid == uid);
         if (key is not null)
         {
-            if (DateTime.UtcNow < key.DateTime + new TimeSpan(24, 0, 0))
+            if (DateTime.UtcNow < key.DateTime + new TimeSpan(24, 0, 0) && key.Url == url)
             {
-                return key.Uid;
+                return true;
             }
         }
-        var uid = await _wishlogClient.GetUidAsync(url);
+        var newUid = await _wishlogClient.GetUidAsync(url);
         var info = new WishlogAuthkeyItem
         {
             Url = url,
-            Uid = uid,
+            Uid = newUid,
             DateTime = DateTime.UtcNow,
         };
-        if (_dbContext.WishlogAuthkeys.Any(x => x.Url == info.Url))
+        if (_dbContext.WishlogAuthkeys.Any(x => x.Uid == info.Uid))
         {
             _dbContext.Update(info);
         }
@@ -81,7 +80,7 @@ internal class WishlogAuthActionFilter : IAsyncActionFilter
             _dbContext.Add(info);
         }
         await _dbContext.SaveChangesAsync();
-        return uid;
+        return uid == newUid;
     }
 
 

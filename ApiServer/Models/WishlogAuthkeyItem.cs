@@ -7,9 +7,9 @@ namespace Xunkong.ApiServer.Models;
 public class WishlogAuthkeyItem
 {
     [Key]
-    public string Url { get; set; }
-
     public int Uid { get; set; }
+
+    public string Url { get; set; }
 
     public DateTime DateTime { get; set; }
 
