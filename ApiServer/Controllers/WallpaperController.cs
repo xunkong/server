@@ -109,13 +109,13 @@ public class WallpaperController : Controller
 
 
     [HttpGet("next")]
-    [ResponseCache(Duration = 86400)]
+    [ResponseCache(Duration = 2592000)]
     public async Task<WallpaperInfo> GetNextWallpaperInfoAsync([FromQuery] int lastId)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Where(x => x.Id > lastId).FirstOrDefaultAsync();
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Where(x => x.Id > lastId).OrderBy(x => x.Id).FirstOrDefaultAsync();
         if (info == null)
         {
-            info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).FirstOrDefaultAsync();
+            info = await RandomNextAsync();
         }
         return info!;
     }

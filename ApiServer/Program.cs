@@ -33,9 +33,9 @@ builder.Services.AddScoped<WishlogRecordFilter>();
 builder.Services.AddDbContextPool<XunkongDbContext>(options =>
 {
 #if DEBUG
-    options.UseMySql(builder.Configuration.GetConnectionString("constr_xunkong"), new MySqlServerVersion("8.0.27")).EnableSensitiveDataLogging(true);
+    options.UseMySql(builder.Configuration.GetConnectionString("constr_xunkong"), new MySqlServerVersion("8.0.31")).EnableSensitiveDataLogging(true);
 #else
-    options.UseMySql(Environment.GetEnvironmentVariable("CONSTR"), new MySqlServerVersion("8.0.25"));
+    options.UseMySql(Environment.GetEnvironmentVariable("CONSTR"), new MySqlServerVersion("8.0.28"));
 #endif
 });
 
@@ -69,14 +69,16 @@ builder.Services.AddHttpClient<WishlogClient>().ConfigurePrimaryHttpMessageHandl
 
 builder.Services.AddHttpLogging(options =>
 {
-    options.LoggingFields = HttpLoggingFields.RequestPropertiesAndHeaders | HttpLoggingFields.ResponsePropertiesAndHeaders;
-    options.RequestHeaders.Add("X-Channel");
-    options.RequestHeaders.Add("X-Device-Id");
-    options.RequestHeaders.Add("X-Platform");
-    options.RequestHeaders.Add("X-Version");
-    options.RequestHeaders.Add("X-Forwarded-For");
-    options.RequestHeaders.Add("X-Forwarded-Proto");
+    options.LoggingFields = HttpLoggingFields.RequestProperties;
+    //options.LoggingFields = HttpLoggingFields.RequestPropertiesAndHeaders | HttpLoggingFields.ResponsePropertiesAndHeaders;
+    //options.RequestHeaders.Add("X-Channel");
+    //options.RequestHeaders.Add("X-Device-Id");
+    //options.RequestHeaders.Add("X-Platform");
+    //options.RequestHeaders.Add("X-Version");
+    //options.RequestHeaders.Add("X-Forwarded-For");
+    //options.RequestHeaders.Add("X-Forwarded-Proto");
 });
+
 
 
 var app = builder.Build();
