@@ -21,6 +21,10 @@ public class BaseWrapperFilter : IActionFilter
             var wrapper = new { Code = 0, Message = "OK", Data = result.Value };
             context.Result = new ObjectResult(wrapper);
         }
+        if (context.Result is EmptyResult)
+        {
+            context.Result = new ObjectResult(new { Code = 0, Message = "OK", Data = new object() });
+        }
     }
 
     public void OnActionExecuting(ActionExecutingContext context)

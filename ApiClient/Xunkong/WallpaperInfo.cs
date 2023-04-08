@@ -7,13 +7,13 @@ public class WallpaperInfo
 
     public bool Enable { get; set; }
 
-    public bool Recommend { get; set; }
-
     public string? Title { get; set; }
 
     public string? Author { get; set; }
 
     public string? Description { get; set; }
+
+    public string? FileName { get; set; }
 
     public List<string> Tags { get; set; }
 
@@ -21,10 +21,8 @@ public class WallpaperInfo
 
     public string? Source { get; set; }
 
+    public double Rating { get; set; } = -1;
 
-    public string? FileName { get; set; }
-
-    [JsonIgnore]
-    public string SourceDomain => new Uri(Source ?? "").Host;
+    public int RatingCount { get; set; }
 
 }

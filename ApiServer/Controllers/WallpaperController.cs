@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Xunkong.ApiClient.Xunkong;
 
 namespace Xunkong.ApiServer.Controllers;
 
@@ -14,12 +15,14 @@ public class WallpaperController : Controller
 
     private readonly XunkongDbContext _dbContext;
 
+    private readonly DbConnectionFactory _factory;
 
 
-    public WallpaperController(ILogger<WallpaperController> logger, XunkongDbContext dbContext)
+    public WallpaperController(ILogger<WallpaperController> logger, XunkongDbContext dbContext, DbConnectionFactory factory)
     {
         _logger = logger;
         _dbContext = dbContext;
+        _factory = factory;
     }
 
 
@@ -133,6 +136,35 @@ public class WallpaperController : Controller
             list.Add(await RandomNextAsync());
         }
         return new { Count = size, List = list };
+    }
+
+
+
+    [HttpPost("rating")]
+    [ResponseCache(NoStore = true)]
+    public async Task RatingWallpaperAsync([FromHeader(Name = "X-Device-Id")] string deviceId, [FromBody] List<WallpaperRating> ratings)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            throw new XunkongApiException(-1, "DeviceId is wrong.");
+        }
+        foreach (var rating in ratings)
+        {
+            if (rating.DeviceId != deviceId)
+            {
+                throw new XunkongApiException(-1, "DeviceId is wrong.");
+            }
+            rating.Rating = Math.Clamp(rating.Rating, -1, 5);
+        }
+        using var dapper = _factory.CreateDbConnection();
+        await dapper.OpenAsync();
+        using var t = await dapper.BeginTransactionAsync();
+        await dapper.ExecuteAsync("""
+            INSERT INTO wallpaper_rating (WallpaperId, DeviceId, Rating, Time)
+            VALUES (@WallpaperId, @DeviceId, @Rating, @Time)
+            ON DUPLICATE KEY UPDATE Rating=@Rating, Time=@Time;
+            """, ratings, t);
+        await t.CommitAsync();
     }
 
 

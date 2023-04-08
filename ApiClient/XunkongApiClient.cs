@@ -77,12 +77,11 @@ public class XunkongApiClient
     }
 
 
-
-    private async Task<T> CommonSendAsync<T>(HttpRequestMessage request) where T : class
+    private async Task CommonPostAsync(string url, object value)
     {
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.PostAsJsonAsync(url, value);
         response.EnsureSuccessStatusCode();
-        var wrapper = await response.Content.ReadFromJsonAsync<ApiBaseWrapper<T>>();
+        var wrapper = await response.Content.ReadFromJsonAsync<ApiBaseWrapper<object>>();
         if (wrapper is null)
         {
             throw new XunkongApiException(-2, "Response body is null.");
@@ -91,11 +90,6 @@ public class XunkongApiClient
         {
             throw new XunkongApiException(wrapper.Code, wrapper.Message);
         }
-        if (wrapper.Data is null)
-        {
-            throw new XunkongApiException(-2, "Response data is null.");
-        }
-        return wrapper.Data;
     }
 
 
@@ -219,11 +213,6 @@ public class XunkongApiClient
         return await CommonGetAsync<WallpaperInfo>(url);
     }
 
-    public async Task<WallpaperInfo> GetRecommendWallpaperAsync()
-    {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/recommend";
-        return await CommonGetAsync<WallpaperInfo>(url);
-    }
 
 
     public async Task<WallpaperInfo> GetRandomWallpaperAsync()
@@ -248,6 +237,13 @@ public class XunkongApiClient
         return wrapper.List;
     }
 
+
+
+    public async Task UploadWallpaperRatingAsync(IEnumerable<WallpaperRating> ratings)
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/rating";
+        await CommonPostAsync(url, ratings);
+    }
 
 
 
