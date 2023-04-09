@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Text;
 using Xunkong.ApiClient.Xunkong;
 
 namespace Xunkong.ApiServer.Controllers;
@@ -112,15 +113,10 @@ public class WallpaperController : Controller
 
 
     [HttpGet("next")]
-    [ResponseCache(Duration = 2592000)]
+    [ResponseCache(Duration = 604800)]
     public async Task<WallpaperInfo> GetNextWallpaperInfoAsync([FromQuery] int lastId)
     {
-        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => x.Enable).Where(x => x.Id > lastId).OrderBy(x => x.Id).FirstOrDefaultAsync();
-        if (info == null)
-        {
-            info = await RandomNextAsync();
-        }
-        return info!;
+        return await RandomNextAsync();
     }
 
 
@@ -165,6 +161,30 @@ public class WallpaperController : Controller
             ON DUPLICATE KEY UPDATE Rating=@Rating, Time=@Time;
             """, ratings, t);
         await t.CommitAsync();
+    }
+
+
+    [HttpGet("search")]
+    [ResponseCache(Duration = 604800)]
+    public async Task<object> SearchWallpaperAsync([FromQuery(Name = "key")] string[] keys, [FromQuery] int offset = 0, [FromQuery] int take = 20)
+    {
+        var words = keys.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        var regex = string.Join("|", words);
+        using var dapper = _factory.CreateDbConnection();
+        var total = await dapper.QueryFirstOrDefaultAsync<int>("SELECT COUNT(*) FROM wallpapers WHERE CONCAT_WS(' ', Title, Author, Description, Tags) REGEXP @regex;", new { regex });
+        take = Math.Clamp(take, 1, 100);
+        offset = Math.Clamp(offset, 0, Math.Clamp(total - take, 0, int.MaxValue));
+        var sb = new StringBuilder();
+        sb.Append("SELECT *, (");
+        for (int i = 1; i < words.Count + 1; i++)
+        {
+            sb.Append($"IF(Title LIKE {{{i}}}, 1, 0) + IF(Author LIKE {{{i}}}, 1, 0) + IF(Description LIKE {{{i}}}, 1, 0) + IF(Tags LIKE {{{i}}}, 1, 0) + ");
+        }
+        sb.Append($"0) AS weight FROM wallpapers WHERE CONCAT_WS(' ', Title, Author, Description, Tags) REGEXP {{0}} ORDER BY weight DESC LIMIT {offset},{take};");
+        var param = new List<string>(words.Count + 1) { regex };
+        param.AddRange(words.Select(x => $"%{x}%"));
+        var list = await _dbContext.WallpaperInfos.FromSqlRaw(sb.ToString(), param.ToArray()).ToListAsync();
+        return new { total, offset, take, keys = words, list };
     }
 
 
