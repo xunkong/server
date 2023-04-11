@@ -6,8 +6,6 @@ using Xunkong.GenshinData.Character;
 using Xunkong.GenshinData.Material;
 using Xunkong.GenshinData.Text;
 using Xunkong.GenshinData.Weapon;
-using Xunkong.Hoyolab.DailyNote;
-using Xunkong.Hoyolab.SpiralAbyss;
 
 namespace Xunkong.ApiServer.Services;
 
@@ -30,6 +28,9 @@ public class XunkongDbContext : DbContext
     public DbSet<WishEventInfo> WishEventInfos { get; set; }
 
     public DbSet<WallpaperInfo> WallpaperInfos { get; set; }
+
+    public DbSet<TextMapItem> TextMapItems { get; set; }
+
 
 
 
@@ -90,6 +91,10 @@ public class XunkongDbContext : DbContext
         modelBuilder.Entity<WeaponInfo>().Property(x => x.Properties).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<WeaponProperty>>(str, JsonOptions));
         modelBuilder.Entity<WeaponInfo>().Property(x => x.Skills).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<WeaponSkill>>(str, JsonOptions));
         modelBuilder.Entity<WeaponInfo>().Property(x => x.Promotions).HasConversion(obj => JsonSerializer.Serialize(obj, JsonOptions), str => JsonSerializer.Deserialize<List<WeaponPromotion>>(str, JsonOptions));
+
+        modelBuilder.Entity<TextMapItem>().ToTable("info_textmap");
+        modelBuilder.Entity<TextMapItem>().HasKey(x => x.ItemId);
+
     }
 
 

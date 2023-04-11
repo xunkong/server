@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
+using System.Text.RegularExpressions;
 using Xunkong.ApiClient.Xunkong;
 
 namespace Xunkong.ApiServer.Controllers;
@@ -125,7 +126,7 @@ public class WallpaperController : Controller
     [ResponseCache(Duration = 5)]
     public async Task<object> GetWallpaperInfosAsync([FromQuery] int size = 20)
     {
-        size = Math.Clamp(size, 10, 40);
+        size = Math.Clamp(size, 10, 100);
         var list = new List<WallpaperInfo>(size);
         for (int i = 0; i < size; i++)
         {
@@ -169,7 +170,7 @@ public class WallpaperController : Controller
     public async Task<object> SearchWallpaperAsync([FromQuery(Name = "key")] string[] keys, [FromQuery] int offset = 0, [FromQuery] int take = 20)
     {
         var words = keys.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
-        var regex = string.Join("|", words);
+        var regex = string.Join("|", words.Select(Regex.Escape));
         using var dapper = _factory.CreateDbConnection();
         var total = await dapper.QueryFirstOrDefaultAsync<int>("SELECT COUNT(*) FROM wallpapers WHERE CONCAT_WS(' ', Title, Author, Description, Tags) REGEXP @regex;", new { regex });
         take = Math.Clamp(take, 1, 100);
@@ -178,9 +179,9 @@ public class WallpaperController : Controller
         sb.Append("SELECT *, (");
         for (int i = 1; i < words.Count + 1; i++)
         {
-            sb.Append($"IF(Title LIKE {{{i}}}, 1, 0) + IF(Author LIKE {{{i}}}, 1, 0) + IF(Description LIKE {{{i}}}, 1, 0) + IF(Tags LIKE {{{i}}}, 1, 0) + ");
+            sb.Append($"IF(CONCAT_WS(' ', Title, Author, Description, Tags) LIKE {{{i}}}, 1, 0) + ");
         }
-        sb.Append($"0) AS weight FROM wallpapers WHERE CONCAT_WS(' ', Title, Author, Description, Tags) REGEXP {{0}} ORDER BY weight DESC LIMIT {offset},{take};");
+        sb.Append($"0) AS weight FROM wallpapers WHERE CONCAT_WS(' ', Title, Author, Description, Tags) REGEXP {{0}} ORDER BY weight DESC, Rating DESC LIMIT {offset},{take};");
         var param = new List<string>(words.Count + 1) { regex };
         param.AddRange(words.Select(x => $"%{x}%"));
         var list = await _dbContext.WallpaperInfos.FromSqlRaw(sb.ToString(), param.ToArray()).ToListAsync();

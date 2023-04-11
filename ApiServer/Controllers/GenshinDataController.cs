@@ -1,7 +1,9 @@
 ﻿using Xunkong.ApiClient.GenshinData;
+using Xunkong.GenshinData;
 using Xunkong.GenshinData.Achievement;
 using Xunkong.GenshinData.Character;
 using Xunkong.GenshinData.Material;
+using Xunkong.GenshinData.Text;
 using Xunkong.GenshinData.Weapon;
 
 namespace Xunkong.ApiServer.Controllers;
@@ -35,7 +37,15 @@ public class GenshinDataController : ControllerBase
         var characters = await _dbContext.CharacterInfos.FromSqlRaw("SELECT * FROM info_character_v1 WHERE Enable;").AsNoTracking().ToListAsync();
         var weapons = await _dbContext.WeaponInfos.FromSqlRaw("SELECT * FROM info_weapon_v1 WHERE Enable;").AsNoTracking().ToListAsync();
         var events = await _dbContext.WishEventInfos.AsNoTracking().ToListAsync();
-        return new AllGenshinData { Characters = characters, Weapons = weapons, WishEvents = events, Achievement = await GetAchievementAsync() };
+        var textmap = await _dbContext.TextMapItems.AsNoTracking().ToListAsync();
+        using var dapper = _dbFactory.CreateDbConnection();
+        var material = await dapper.QueryAsync<MaterialItem>("""
+            SELECT * FROM info_material WHERE Enable AND MaterialType IN
+            ('MATERIAL_ADSORBATE', 'MATERIAL_AVATAR_MATERIAL', 'MATERIAL_EXP_FRUIT', 'MATERIAL_WEAPON_EXP_STONE',
+             'MATERIAL_RELIQUARY_MATERIAL',
+             'MATERIAL_NOTICE_ADD_HP', 'MATERIAL_SPICE_FOOD', 'MATERIAL_FOOD', 'MATERIAL_WIDGET', 'MATERIAL_EXCHANGE');       
+            """);
+        return new AllGenshinData { Characters = characters, Weapons = weapons, WishEvents = events, Achievement = await GetAchievementAsync(), TextMaps = textmap, Materials = material.ToList() };
     }
 
 
@@ -84,6 +94,28 @@ public class GenshinDataController : ControllerBase
         var goals = await _dbContext.Set<AchievementGoal>().AsNoTracking().ToListAsync();
         var items = await _dbContext.Set<AchievementItem>().FromSqlRaw("SELECT * FROM info_achievement_item WHERE Enable;").AsNoTracking().ToListAsync();
         return new Achievement { Goals = goals, Items = items };
+    }
+
+
+    [HttpGet("textmap")]
+    public async Task<object> GetTextMapAsync()
+    {
+        var list = await _dbContext.TextMapItems.AsNoTracking().ToListAsync();
+        return new { Count = list.Count, List = list };
+    }
+
+
+    [HttpGet("material")]
+    public async Task<object> GetMaterialAsync()
+    {
+        using var dapper = _dbFactory.CreateDbConnection();
+        var list = await dapper.QueryAsync<MaterialItem>("""
+            SELECT * FROM info_material WHERE Enable AND MaterialType IN
+            ('MATERIAL_ADSORBATE', 'MATERIAL_AVATAR_MATERIAL', 'MATERIAL_EXP_FRUIT', 'MATERIAL_WEAPON_EXP_STONE',
+             'MATERIAL_RELIQUARY_MATERIAL',
+             'MATERIAL_NOTICE_ADD_HP', 'MATERIAL_SPICE_FOOD', 'MATERIAL_FOOD', 'MATERIAL_WIDGET', 'MATERIAL_EXCHANGE');       
+            """);
+        return new { Count = list.Count(), List = list };
     }
 
 

@@ -1,4 +1,6 @@
 ﻿using Xunkong.GenshinData.Character;
+using Xunkong.GenshinData.Material;
+using Xunkong.GenshinData.Text;
 using Xunkong.GenshinData.Weapon;
 using Xunkong.Hoyolab.Wishlog;
 
@@ -14,4 +16,9 @@ public class AllGenshinData
     public List<WishEventInfo> WishEvents { get; set; }
 
     public Achievement Achievement { get; set; }
+
+    public List<MaterialItem> Materials { get; set; }
+
+    public List<TextMapItem> TextMaps { get; set; }
+
 }
