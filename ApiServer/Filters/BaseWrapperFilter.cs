@@ -18,7 +18,7 @@ public class BaseWrapperFilter : IActionFilter
         }
         if (context.Result is ObjectResult result)
         {
-            var wrapper = new { Code = 0, Message = "OK", Data = result.Value };
+            var wrapper = new BaseWrapper { Code = 0, Message = "OK", Data = result.Value };
             context.Result = new ObjectResult(wrapper);
         }
         if (context.Result is EmptyResult)

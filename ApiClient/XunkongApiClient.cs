@@ -204,35 +204,35 @@ public class XunkongApiClient
 
 
 
-    #region Genshin Wallpaper
+    #region Wallpaper
 
 
-    public async Task<WallpaperInfo> GetWallpaperByIdAsync(int id)
+    public async Task<WallpaperInfo> GetWallpaperByIdAsync(int id, string? format = null)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/{id}";
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/{id}?format={format}";
         return await CommonGetAsync<WallpaperInfo>(url);
     }
 
 
 
-    public async Task<WallpaperInfo> GetRandomWallpaperAsync()
+    public async Task<WallpaperInfo> GetRandomWallpaperAsync(string? format = null)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/random";
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/random?format={format}";
         return await CommonGetAsync<WallpaperInfo>(url);
     }
 
 
-    public async Task<WallpaperInfo> GetNextWallpaperAsync(int lastId = 0)
+    public async Task<WallpaperInfo> GetNextWallpaperAsync(int lastId = 0, string? format = null)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/next?lastId={lastId}";
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/next?lastId={lastId}?format={format}";
         return await CommonGetAsync<WallpaperInfo>(url);
     }
 
 
 
-    public async Task<List<WallpaperInfo>> GetWallpaperListAsync(int size)
+    public async Task<List<WallpaperInfo>> GetWallpaperListAsync(int size, string? format = null)
     {
-        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/list?size={size}";
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/list?size={size}&format={format}";
         var wrapper = await CommonGetAsync<ListWrapper<WallpaperInfo>>(url);
         return wrapper.List;
     }
@@ -243,6 +243,15 @@ public class XunkongApiClient
     {
         var url = $"{BaseUrl}/{ApiVersion}/wallpaper/rating";
         await CommonPostAsync(url, ratings);
+    }
+
+
+
+    public async Task<List<WallpaperInfo>> GetWallpaperInfosByIdsAsnyc(IEnumerable<int> ids, string? format = null)
+    {
+        var url = $"{BaseUrl}/{ApiVersion}/wallpaper/getInfosByIds?format={format}";
+        var wrapper = await CommonPostAsync<ListWrapper<WallpaperInfo>>(url, ids);
+        return wrapper.List;
     }
 
 

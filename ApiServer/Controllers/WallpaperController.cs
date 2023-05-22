@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.AspNetCore.Mvc.Filters;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunkong.ApiClient.Xunkong;
@@ -11,6 +12,16 @@ namespace Xunkong.ApiServer.Controllers;
 [ServiceFilter(typeof(BaseRecordResultFilter))]
 public class WallpaperController : Controller
 {
+
+    public interface IWallpaperList
+    {
+        public List<WallpaperInfo> List { get; init; }
+    }
+
+    public record WallpaperListResult(int Count, List<WallpaperInfo> List) : IWallpaperList;
+
+    public record WallpaperSearchResult(int Total, int Offset, int Take, List<string> Keys, List<WallpaperInfo> List) : IWallpaperList;
+
 
 
     private readonly ILogger<WallpaperController> _logger;
@@ -124,7 +135,7 @@ public class WallpaperController : Controller
 
     [HttpGet("list")]
     [ResponseCache(Duration = 5)]
-    public async Task<object> GetWallpaperInfosAsync([FromQuery] int size = 20)
+    public async Task<WallpaperListResult> GetWallpaperInfosAsync([FromQuery] int size = 20)
     {
         size = Math.Clamp(size, 10, 100);
         var list = new List<WallpaperInfo>(size);
@@ -132,7 +143,7 @@ public class WallpaperController : Controller
         {
             list.Add(await RandomNextAsync());
         }
-        return new { Count = size, List = list };
+        return new WallpaperListResult(size, list);
     }
 
 
@@ -167,7 +178,7 @@ public class WallpaperController : Controller
 
     [HttpGet("search")]
     [ResponseCache(Duration = 604800)]
-    public async Task<object> SearchWallpaperAsync([FromQuery(Name = "key")] string[] keys, [FromQuery] int offset = 0, [FromQuery] int take = 20)
+    public async Task<WallpaperSearchResult> SearchWallpaperAsync([FromQuery(Name = "key")] string[] keys, [FromQuery] int offset = 0, [FromQuery] int take = 20)
     {
         var words = keys.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
         var regex = string.Join("|", words.Select(Regex.Escape));
@@ -185,8 +196,18 @@ public class WallpaperController : Controller
         var param = new List<string>(words.Count + 1) { regex };
         param.AddRange(words.Select(x => $"%{x}%"));
         var list = await _dbContext.WallpaperInfos.FromSqlRaw(sb.ToString(), param.ToArray()).ToListAsync();
-        return new { total, offset, take, keys = words, list };
+        return new WallpaperSearchResult(total, offset, take, words, list);
     }
+
+
+
+    [HttpPost("getInfosByIds")]
+    public async Task<WallpaperListResult> GetInfosByIdsAsync([FromBody] List<int> ids)
+    {
+        var info = await _dbContext.WallpaperInfos.AsNoTracking().Where(x => ids.Contains(x.Id)).ToListAsync();
+        return new WallpaperListResult(info.Count, info);
+    }
+
 
 
 
@@ -214,6 +235,94 @@ public class WallpaperController : Controller
         }
     }
 
+
+
+
+    public override void OnActionExecuted(ActionExecutedContext context)
+    {
+        base.OnActionExecuted(context);
+        string? format = "";
+        Version? version = null;
+        if (context.HttpContext.Request.Query.TryGetValue("format", out var value1))
+        {
+            format = value1.FirstOrDefault()?.ToLower();
+        }
+        if (context.HttpContext.Request.Headers.TryGetValue("X-Version", out var value2))
+        {
+            if (Version.TryParse(value2.FirstOrDefault(), out version))
+            {
+
+            }
+        }
+        else
+        {
+
+        }
+        if (version <= new Version(1, 3, 7, 0))
+        {
+            format = format switch
+            {
+                "jpeg" => "jpg",
+                "avif" or "jpg" or "png" or "webp" => format,
+                _ => "webp",
+            };
+        }
+        else
+        {
+            format = format switch
+            {
+                "jpeg" => "jpg",
+                "avif" or "jpg" or "png" or "webp" => format,
+                _ => "avif",
+            };
+        }
+        if (format is "jpg" or "png")
+        {
+            if (context.Result is ObjectResult res && res.Value is BaseWrapper wrapper)
+            {
+                if (wrapper.Data is WallpaperInfo info)
+                {
+                    info.Url = $"{info.Url}!{format}";
+                    info.FileName = Path.ChangeExtension(info.FileName, format);
+                }
+                if (wrapper.Data is IWallpaperList wallpaperList)
+                {
+                    foreach (var item in wallpaperList.List)
+                    {
+                        item.Url = $"{item.Url}!{format}";
+                        item.FileName = Path.ChangeExtension(item.FileName, format);
+                    }
+                }
+            }
+            if (context.Result is RedirectResult rr)
+            {
+                rr.Url = $"{rr.Url}!{format}";
+            }
+        }
+        if (format is "avif" or "webp")
+        {
+            if (context.Result is ObjectResult res && res.Value is BaseWrapper wrapper)
+            {
+                if (wrapper.Data is WallpaperInfo info)
+                {
+                    info.Url = Path.ChangeExtension(info.Url, format);
+                    info.FileName = Path.ChangeExtension(info.FileName, format);
+                }
+                if (wrapper.Data is IWallpaperList wallpaperList)
+                {
+                    foreach (var item in wallpaperList.List)
+                    {
+                        item.Url = Path.ChangeExtension(item.Url, format);
+                        item.FileName = Path.ChangeExtension(item.FileName, format);
+                    }
+                }
+            }
+            if (context.Result is RedirectResult rr)
+            {
+                rr.Url = Path.ChangeExtension(rr.Url, format);
+            }
+        }
+    }
 
 
 }
