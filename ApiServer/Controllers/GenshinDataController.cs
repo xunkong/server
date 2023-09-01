@@ -1,9 +1,7 @@
 ﻿using Xunkong.ApiClient.GenshinData;
-using Xunkong.GenshinData;
 using Xunkong.GenshinData.Achievement;
 using Xunkong.GenshinData.Character;
 using Xunkong.GenshinData.Material;
-using Xunkong.GenshinData.Text;
 using Xunkong.GenshinData.Weapon;
 
 namespace Xunkong.ApiServer.Controllers;
@@ -11,7 +9,7 @@ namespace Xunkong.ApiServer.Controllers;
 [ApiController]
 [ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
-[ServiceFilter(typeof(BaseRecordResultFilter))]
+//[ServiceFilter(typeof(BaseRecordResultFilter))]
 [ResponseCache(Duration = 3600 * 24)]
 //[ResponseCache(NoStore = true)]
 public class GenshinDataController : ControllerBase

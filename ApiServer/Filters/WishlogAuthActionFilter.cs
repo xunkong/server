@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
-using System.Xml;
 using Xunkong.Hoyolab;
 
 namespace Xunkong.ApiServer.Filters;

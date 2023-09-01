@@ -9,7 +9,7 @@ namespace Xunkong.ApiServer.Controllers;
 [ApiController]
 [ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
-[ServiceFilter(typeof(BaseRecordResultFilter))]
+//[ServiceFilter(typeof(BaseRecordResultFilter))]
 public class WallpaperController : Controller
 {
 

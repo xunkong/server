@@ -8,7 +8,7 @@ namespace Xunkong.ApiServer.Controllers;
 [ApiController]
 [ApiVersion("1")]
 [Route("v{version:ApiVersion}/[controller]")]
-[ServiceFilter(typeof(WishlogRecordFilter))]
+//[ServiceFilter(typeof(WishlogRecordFilter))]
 [ServiceFilter(typeof(WishlogAuthActionFilter))]
 [ResponseCache(NoStore = true)]
 public class WishlogController : ControllerBase
